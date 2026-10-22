@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+    <!-- Outer Avionics Instrument Bezel -->
+    <path
+        android:strokeColor="#E2E8F0"
+        android:strokeWidth="2.5"
+        android:fillColor="#00000000"
+        android:pathData="M 54,20 A 34,34 0 1,0 54,88 A 34,34 0 1,0 54,20 Z" />
+    <path
+        android:strokeColor="#64748B"
+        android:strokeWidth="1.2"
+        android:strokeAlpha="0.8"
+        android:fillColor="#00000000"
+        android:pathData="M 54,26 A 28,28 0 1,0 54,82 A 28,28 0 1,0 54,26 Z" />
+    <!-- Crosshairs & Grid -->
+    <path
+        android:strokeColor="#CBD5E1"
+        android:strokeWidth="1.8"
+        android:pathData="M 54,20 L 54,34 M 54,74 L 54,88 M 20,54 L 34,54 M 74,54 L 88,54" />
+    <!-- Center Target Reticle / Aircraft symbol -->
+    <path
+        android:fillColor="#E2E8F0"
+        android:pathData="M 54,43 L 57,51 L 68,54 L 57,57 L 54,65 L 51,57 L 40,54 L 51,51 Z" />
+    <!-- Calibration tick marks -->
+    <path
+        android:strokeColor="#94A3B8"
+        android:strokeWidth="1.2"
+        android:pathData="M 34,34 L 39,39 M 74,34 L 69,39 M 34,74 L 39,69 M 74,74 L 69,69" />
+</vector>

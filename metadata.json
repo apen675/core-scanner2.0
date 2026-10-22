@@ -1,0 +1,6 @@
+{
+  "name": "Avionics Scanner",
+  "description": "Aviation data plate scanner and Airworthiness Directive compliance screening tool for aircraft avionics and instruments.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
