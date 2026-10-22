@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0B0C10">
+  <meta name="description" content="Aviation data plate scanner and Airworthiness Directive screening aid.">
+  <title>Avionics Scanner</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath fill='%23E2E8F0' d='M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z'/%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <div class="brand">
+        <svg class="brand-mark" viewBox="0 0 24 24" aria-hidden="true"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg>
+        <div>
+          <h1 id="page-title">Avionics History</h1>
+          <p class="brand-sub">Data plate scan &amp; AD screening</p>
+        </div>
+      </div>
+      <button class="icon-btn" id="open-reference" type="button" aria-label="AD reference" title="AD reference">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 2h9l5 5v15H6zM14 3v5h5M9 12h8M9 16h8M9 8h3" /></svg>
+      </button>
+    </header>
+
+    <nav class="segmented" role="tablist" aria-label="Sections">
+      <button role="tab" id="tab-inventory" aria-controls="panel-inventory" aria-selected="true" data-tab="inventory">Inventory</button>
+      <button role="tab" id="tab-scanner" aria-controls="panel-scanner" aria-selected="false" data-tab="scanner">Scanner</button>
+    </nav>
+
+    <main>
+      <!-- Inventory -->
+      <section id="panel-inventory" role="tabpanel" aria-labelledby="tab-inventory">
+        <div class="stats-card">
+          <div class="route">
+            <span class="route-code">SCAN</span>
+            <span class="route-line" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M21 16v-2l-8-5V3.5a1.5 1.5 0 0 0-3 0V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L13 19v-5.5z"/></svg></span>
+            <span class="route-code">LOG</span>
+          </div>
+          <dl class="stats">
+            <div><dt>Parts logged</dt><dd id="stat-total">0</dd></div>
+            <div class="alert"><dt>AD alerts</dt><dd id="stat-alerts">0</dd></div>
+            <div><dt>8130-3 tagged</dt><dd id="stat-8130">0</dd></div>
+          </dl>
+        </div>
+
+        <div class="search">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-4-4"/></svg>
+          <input id="search" type="search" placeholder="Search P/N, S/N, component, AD…" autocomplete="off" aria-label="Search history">
+        </div>
+
+        <div class="pills" id="filters" role="group" aria-label="Filter"></div>
+
+        <ul class="tickets" id="ticket-list" aria-live="polite"></ul>
+
+        <div class="empty" id="empty-state" hidden>
+          <p class="empty-title">No scans yet</p>
+          <p class="empty-body">Photograph a data plate, pick a demo plate, or enter one by hand. Scans are saved in this browser only.</p>
+          <button class="btn primary" type="button" data-goto="scanner">Open scanner</button>
+        </div>
+        <div class="empty" id="no-results" hidden>
+          <p class="empty-title">No matches</p>
+          <p class="empty-body">Try a different search or filter.</p>
+        </div>
+
+        <div class="inventory-actions" id="inventory-actions" hidden>
+          <button class="btn" type="button" id="export-csv">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v3h16v-3"/></svg>
+            Export CSV
+          </button>
+          <button class="btn danger-ghost" type="button" id="clear-all">Clear history</button>
+        </div>
+      </section>
+
+      <!-- Scanner -->
+      <section id="panel-scanner" role="tabpanel" aria-labelledby="tab-scanner" hidden>
+        <div class="viewfinder" id="viewfinder">
+          <img id="preview" alt="Captured data plate" hidden>
+          <div class="reticle" aria-hidden="true"><span></span><span></span><span></span><span></span></div>
+          <div class="laser" aria-hidden="true"></div>
+          <div class="vf-hint" id="vf-hint">
+            <p class="vf-title">Frame the data plate</p>
+            <p class="vf-body">Fill the frame, avoid glare, keep the text sharp.</p>
+          </div>
+          <div class="vf-busy" id="vf-busy" hidden>
+            <div class="spinner" aria-hidden="true"></div>
+            <p id="vf-busy-text">Reading plate with Gemini…</p>
+          </div>
+        </div>
+
+        <div class="scan-actions">
+          <label class="btn primary big">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+            Take photo
+            <input type="file" accept="image/*" capture="environment" id="camera-input" class="visually-hidden">
+          </label>
+          <label class="btn big">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 16v4h16v-4M12 4v12m0-12-4 4m4-4 4 4"/></svg>
+            Upload photo
+            <input type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" id="upload-input" class="visually-hidden">
+          </label>
+        </div>
+        <div class="scan-actions secondary">
+          <button class="btn" type="button" id="open-presets">Demo plates</button>
+          <button class="btn" type="button" id="manual-entry">Enter manually</button>
+        </div>
+
+        <p class="error-banner" id="scan-error" role="alert" hidden></p>
+
+        <aside class="disclaimer">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 2 20h20zM12 10v4m0 3v.01"/></svg>
+          <div>
+            <p class="disclaimer-title">FAA regulatory screening aid only</p>
+            <p>This tool does not replace official FAA AD compliance checks. A certified A&amp;P/IA technician must verify records in the FAA Dynamic Regulatory System (DRS) and the maintenance logs before installation or return to service.</p>
+          </div>
+        </aside>
+      </section>
+    </main>
+  </div>
+
+  <!-- Edit / confirm scan -->
+  <dialog id="edit-dialog" aria-labelledby="edit-title">
+    <form method="dialog" id="edit-form" novalidate>
+      <header class="dialog-head">
+        <div>
+          <h2 id="edit-title">Confirm data plate</h2>
+          <p class="source-chip" id="edit-source"></p>
+        </div>
+        <button class="icon-btn" type="button" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+
+      <p class="warn-banner" id="edit-warning" hidden></p>
+      <div class="ad-banner" id="live-ad" aria-live="polite"></div>
+
+      <div class="fields">
+        <label class="field"><span>Part number <span class="req">*</span></span>
+          <input name="partNumber" class="mono" autocomplete="off" autocapitalize="characters" spellcheck="false" required>
+        </label>
+        <label class="field">Serial number
+          <input name="serialNumber" class="mono" autocomplete="off" autocapitalize="characters" spellcheck="false">
+        </label>
+        <label class="field">Mod marks
+          <input name="modMarks" class="mono" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="e.g. M, 1-3">
+        </label>
+        <label class="field">Mfg date
+          <input name="mfgDate" class="mono" autocomplete="off" placeholder="YYYY-MM">
+        </label>
+        <label class="field wide">Component
+          <input name="componentName" autocomplete="off" placeholder="e.g. Altimeter">
+        </label>
+        <label class="field wide">Condition
+          <select name="condition">
+            <option>As Removed (AR)</option>
+            <option>Serviceable (SV)</option>
+            <option>Overhauled (OH)</option>
+            <option>New (NE)</option>
+          </select>
+        </label>
+        <label class="field check wide">
+          <input type="checkbox" name="has8130">
+          <span>FAA 8130-3 / EASA Form 1 tag present</span>
+        </label>
+        <label class="field wide">Notes
+          <textarea name="notes" rows="2"></textarea>
+        </label>
+      </div>
+
+      <details class="raw" id="edit-raw-wrap" hidden>
+        <summary>Raw OCR output</summary>
+        <pre id="edit-raw"></pre>
+      </details>
+
+      <p class="error-banner" id="edit-error" role="alert" hidden></p>
+
+      <footer class="dialog-foot">
+        <button class="btn" type="button" data-close>Cancel</button>
+        <button class="btn primary" id="save-part" value="save">Save to history</button>
+      </footer>
+    </form>
+  </dialog>
+
+  <!-- Part detail -->
+  <dialog id="detail-dialog" aria-labelledby="detail-title">
+    <div class="dialog-body">
+      <header class="dialog-head">
+        <div>
+          <h2 id="detail-title"></h2>
+          <p class="muted" id="detail-sub"></p>
+        </div>
+        <button class="icon-btn" type="button" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <div class="ad-banner" id="detail-ad"></div>
+      <dl class="detail-grid" id="detail-grid"></dl>
+      <details class="raw" id="detail-raw-wrap">
+        <summary>Raw extracted text</summary>
+        <pre id="detail-raw"></pre>
+      </details>
+      <footer class="dialog-foot">
+        <button class="btn danger-ghost" type="button" id="detail-delete">Delete</button>
+        <a class="btn primary" id="detail-drs" target="_blank" rel="noopener noreferrer">Search FAA DRS</a>
+      </footer>
+    </div>
+  </dialog>
+
+  <!-- Presets -->
+  <dialog id="preset-dialog" aria-labelledby="preset-title">
+    <div class="dialog-body">
+      <header class="dialog-head">
+        <div>
+          <h2 id="preset-title">Demo data plates</h2>
+          <p class="muted">Sample plates for trying the AD screening. Saved as "Demo preset".</p>
+        </div>
+        <button class="icon-btn" type="button" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <ul class="preset-list" id="preset-list"></ul>
+    </div>
+  </dialog>
+
+  <!-- AD reference -->
+  <dialog id="reference-dialog" aria-labelledby="reference-title">
+    <div class="dialog-body">
+      <header class="dialog-head">
+        <div>
+          <h2 id="reference-title">AD &amp; regulation reference</h2>
+          <p class="muted">What the automatic screening checks for.</p>
+        </div>
+        <button class="icon-btn" type="button" data-close aria-label="Close">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+        </button>
+      </header>
+      <ul class="reference-list" id="reference-list"></ul>
+    </div>
+  </dialog>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

@@ -16,7 +16,7 @@ object AdComplianceChecker {
         modMarks: String
     ): AdCheckResult {
         val cleanPn = partNumber.replace(Regex("[^a-zA-Z0-9]"), "").uppercase()
-        val cleanMod = modMarks.uppercase().trim()
+        val mods = parseModMarks(modMarks)
         val cleanSn = serialNumber.uppercase().trim()
 
         if (cleanPn.isEmpty()) {
@@ -34,7 +34,7 @@ object AdComplianceChecker {
             cleanPn.startsWith("C661071") ||
             cleanPn.contains("5934PA")
         ) {
-            val hasModM = cleanMod.contains("M") || cleanMod.contains("MODM") || cleanMod.contains("MOD M")
+            val hasModM = "M" in mods
             return if (hasModM) {
                 AdCheckResult(
                     status = AdStatusLevel.COMPLIANT,
@@ -68,7 +68,7 @@ object AdComplianceChecker {
 
         // 3. Narco AT-50 / AT-150 Transponder AD 94-14-14
         if (cleanPn.contains("AT150") || cleanPn.contains("AT50")) {
-            val hasMod4 = cleanMod.contains("4") || cleanMod.contains("MOD4") || cleanMod.contains("M4")
+            val hasMod4 = "4" in mods
             return if (hasMod4) {
                 AdCheckResult(
                     status = AdStatusLevel.COMPLIANT,
@@ -147,6 +147,35 @@ object AdComplianceChecker {
             details = "No automatic rule match for '$partNumber'. Perform search in FAA Dynamic Regulatory System (DRS) using Part Number and Serial Number before certification.",
             recommendation = "Search FAA DRS database."
         )
+    }
+
+    /**
+     * Splits a data plate mod-mark string into individual mod tokens, e.g.
+     * "MOD M" -> {M}, "1, 2" -> {1, 2}, "MOD 1-5" -> {1, 2, 3, 4, 5}.
+     * Numeric ranges are expanded; letter ranges like "A-D" stay a single token so
+     * they can never satisfy a single-letter mod check. Anything unrecognized simply
+     * doesn't match, so unclear marks fall through to ACTION_REQUIRED.
+     */
+    fun parseModMarks(modMarks: String): Set<String> {
+        val normalized = modMarks.uppercase()
+            .replace(Regex("\\s*-\\s*"), "-")
+            .replace(Regex("\\bMODS?\\.?\\s*"), " ")
+        val tokens = mutableSetOf<String>()
+        for (token in normalized.split(Regex("[\\s,;/&+]+"))) {
+            if (token.isEmpty()) continue
+            val range = Regex("^(\\d+)-(\\d+)$").matchEntire(token)
+            if (range != null) {
+                val start = range.groupValues[1].toIntOrNull()
+                val end = range.groupValues[2].toIntOrNull()
+                if (start != null && end != null && start <= end && end - start <= 50) {
+                    (start..end).forEach { tokens.add(it.toString()) }
+                    continue
+                }
+            }
+            // "04" and "4" are the same mod number
+            tokens.add(if (token.all(Char::isDigit)) token.trimStart('0').ifEmpty { "0" } else token)
+        }
+        return tokens
     }
 
     /**

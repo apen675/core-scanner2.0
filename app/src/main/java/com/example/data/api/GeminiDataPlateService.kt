@@ -15,8 +15,8 @@ import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
 import retrofit2.converter.moshi.MoshiConverterFactory
 import retrofit2.http.Body
+import retrofit2.http.Header
 import retrofit2.http.POST
-import retrofit2.http.Query
 import java.io.ByteArrayOutputStream
 import java.util.concurrent.TimeUnit
 
@@ -72,10 +72,13 @@ data class ExtractedPlateData(
     @Json(name = "rawExtractedText") val rawExtractedText: String? = null
 )
 
+const val API_KEY_HEADER = "x-goog-api-key"
+
 interface GeminiApiService {
+    // Key goes in a header, not the ?key= query param, so it never appears in logged URLs.
     @POST("v1beta/models/gemini-3.5-flash:generateContent")
     suspend fun generateContent(
-        @Query("key") apiKey: String,
+        @Header(API_KEY_HEADER) apiKey: String,
         @Body request: GenerateContentRequest
     ): GenerateContentResponse
 }
@@ -91,7 +94,9 @@ class GeminiDataPlateService {
         .readTimeout(60, TimeUnit.SECONDS)
         .writeTimeout(60, TimeUnit.SECONDS)
         .addInterceptor(HttpLoggingInterceptor().apply {
-            level = HttpLoggingInterceptor.Level.BASIC
+            // No HTTP logging in release builds; redact the key header in case the level is ever raised.
+            level = if (BuildConfig.DEBUG) HttpLoggingInterceptor.Level.BASIC else HttpLoggingInterceptor.Level.NONE
+            redactHeader(API_KEY_HEADER)
         })
         .build()
 
