@@ -9,6 +9,8 @@ This repo contains two versions of the app:
 | Android app (Kotlin / Jetpack Compose) | `app/`, Gradle files | Android phones (build with Android Studio) |
 | Web app (static HTML/JS + one serverless function) | `public/`, `api/scan.js`, `vercel.json` | Any browser; hosted on Vercel |
 
+For a file-by-file map of every function in both versions, plus known issues, see [docs/FUNCTION_MAP.md](docs/FUNCTION_MAP.md).
+
 **Screening aid only.** Neither version replaces an official FAA AD compliance check. A certified A&P/IA must verify the records in the FAA DRS and the maintenance logs.
 
 ## Deploying the web app on Vercel
